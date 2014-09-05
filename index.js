@@ -189,6 +189,10 @@ module.exports = State.extend({
                 self.volume = volume;
             });
         }
+
+        this.stream.onended = function () {
+            self.ended = true;
+        };
     },
 
     fit: function (width) {
