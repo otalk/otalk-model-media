@@ -1,21 +1,26 @@
 var View = require('ampersand-view');
 
 window.VideoView = View.extend({
-    template: '<div><p data-hook="videoURL"></p><audio autoplay data-hook="audio"></audio><video autoplay muted data-hook="video"></video></div>',
+    template: '<div><p data-hook="volume"></p><p data-hook="speaking"></p><audio autoplay data-hook="audio"></audio><video autoplay muted data-hook="video"></video></div>',
     bindings: {
         'model.audioURL': {
             type: 'attribute',
             name: 'src',
             hook: 'audio'
         },
-        'model.videoURL': [{
+        'model.videoURL': {
             type: 'attribute',
             name: 'src',
             hook: 'video'
-        }, {
+        },
+        'model.volume': {
             type: 'text',
-            hook: 'videoURL'
-        }],
+            hook: 'volume'
+        },
+        'model.speaking': {
+            type: 'text',
+            hook: 'speaking'
+        },
         'model.audioPaused': {
             type: 'booleanAttribute',
             name: 'paused',
@@ -74,7 +79,11 @@ window.localMedia.start({audio: true, video: {mandatory: {maxWidth: 400}}}, func
         window.stream = new window.Stream({
             id: stream.id,
             stream: stream,
-            origin: 'local'
+            origin: 'local',
+            audioMonitoring: {
+                detectSpeaking: true,
+                adjustMic: true
+            }
         });
 
 

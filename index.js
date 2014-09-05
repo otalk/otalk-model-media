@@ -1,4 +1,6 @@
 var webrtc = require('webrtcsupport');
+var hark = require('hark');
+var GainController = require('mediastream-gain');
 var State = require('ampersand-state');
 
 
@@ -21,7 +23,16 @@ module.exports = State.extend({
         origin: {
             type: 'string',
             values: ['local', 'remote']
-        }
+        },
+        audioMonitoring: ['object', true, function () {
+            return {
+                detectSpeaking: false,
+                adjustMic: false,
+                threshold: -50,
+                interval: 50,
+                smooting: 0.1
+            };
+        }]
     },
 
     derived: {
@@ -144,6 +155,40 @@ module.exports = State.extend({
                 self.trigger('change:alternates', self.alternates);
             };
         });
+
+        if (this.isLocal && this.audioMonitoring.detectSpeaking) {
+            var audio = this.harker = hark(this.stream, this.audioMonitoring);
+            var gain = this.gainController = new GainController(this.stream);
+            var timeout;
+
+            if (this.audioMonitoring.adjustMic) {
+                gain.setGain(0.5);
+            }
+            
+            audio.on('speaking', function () {
+                self.speaking = true;
+                if (!self.audioPaused && self.audioMonitoring.adjustMic) {
+                    gain.setGain(1);
+                }
+            });
+
+            audio.on('stopped_speaking', function () {
+                if (timeout) {
+                    clearTimeout(timeout);
+                }
+
+                timeout = setTimeout(function () {
+                    self.speaking = false;
+                    if (!self.audioPaused && self.audioMonitoring.adjustMic) {
+                        gain.setGain(0.5);
+                    }
+                });
+            });
+
+            audio.on('volume_change', function (volume) {
+                self.volume = volume;
+            });
+        }
     },
 
     fit: function (width) {
