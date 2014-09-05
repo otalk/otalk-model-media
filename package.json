@@ -1,19 +1,30 @@
 {
   "name": "otalk-model-media",
-  "version": "1.0.0",
   "description": "An Ampersand-State representation for a WebRTC media stream",
-  "main": "index.js",
+  "version": "1.0.0",
   "author": "Lance Stout <lance@andyet.net>",
-  "license": "MIT",
+  "bugs": "https://github.com/otalk/otalk-model-media/issues",
   "dependencies": {
     "webrtcsupport": "^1.0.0"
   },
   "devDependencies": {
-    "localmedia": "^1.0.0",
     "ampersand-view": "^7.1.1",
     "beefy": "^2.1.1",
     "jshint": "^2.5.5",
+    "localmedia": "^1.0.0",
     "precommit-hook": "^1.0.7"
+  },
+  "homepage": "https://github.com/otalk/otalk-model-media",
+  "keywords": [
+    "otalk",
+    "media",
+    "model"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/otalk/otalk-model-media.git"
   },
   "scripts": {
     "start": "./node_modules/.bin/beefy --index demo/index.html demo/demo.js"
