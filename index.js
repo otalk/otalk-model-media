@@ -30,7 +30,7 @@ module.exports = State.extend({
                 adjustMic: false,
                 threshold: -50,
                 interval: 50,
-                smooting: 0.1
+                smoothing: 0.1
             };
         }]
     },
