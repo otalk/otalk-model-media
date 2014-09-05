@@ -17,6 +17,7 @@ module.exports = State.extend({
         volume: 'number',
         speaking: 'boolean',
         activeSpeaker: 'boolean',
+        isScreen: 'boolean',
         origin: {
             type: 'string',
             values: ['local', 'remote']

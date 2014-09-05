@@ -34,6 +34,7 @@ $ npm install otalk-model-media
 - `isRemote` - `{Boolean}`
 - `isAudio` - `{Boolean}`
 - `isVideo` - `{Boolean}`
+- `isScreen` - `{Boolean}`
 
 ## Methods
 
