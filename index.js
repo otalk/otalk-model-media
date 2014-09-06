@@ -64,7 +64,7 @@ module.exports = State.extend({
             }
         },
         videoURL: {
-            deps: ['stream', 'simulcast', 'alternates'],
+            deps: ['isVideo', 'stream', 'simulcast', 'alternates'],
             fn: function () {
                 if (this.simulcast !== undefined && this.alternates.length > 1) {
                     if (!!this.alternates[this.simulcast]) {
@@ -72,13 +72,20 @@ module.exports = State.extend({
                     }
                 }
 
-                return URL.createObjectURL(this.stream);
+                if (this.isVideo) {
+                    return URL.createObjectURL(this.stream);
+                }
+
+                return '';
             }
         },
         audioURL: {
-            deps: ['stream'],
+            deps: ['stream', 'hasAudio'],
             fn: function () {
-                return URL.createObjectURL(this.stream);
+                if (this.hasAudio) {
+                    return URL.createObjectURL(this.stream);
+                }
+                return '';
             }
         },
         height: {
@@ -109,6 +116,12 @@ module.exports = State.extend({
             deps: ['origin'],
             fn: function () {
                 return this.origin === 'remote';
+            }
+        },
+        hasAudio: {
+            deps: ['stream'],
+            fn: function () {
+                return !!this.stream.getAudioTracks().length;
             }
         },
         isAudio: {

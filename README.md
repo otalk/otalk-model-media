@@ -35,6 +35,7 @@ $ npm install otalk-model-media
 - `isAudio` - `{Boolean}`
 - `isVideo` - `{Boolean}`
 - `isScreen` - `{Boolean}`
+- `hasAudio` - `{Boolean}`
 - `audioMonitoring` - `{Object}`
 
 ### Audio Monitoring Options
