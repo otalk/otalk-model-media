@@ -50,7 +50,7 @@ module.exports = State.extend({
         cameraName: {
             deps: ['type', 'stream'],
             fn: function () {
-                if (this.stream.getVideoTracks()) {
+                if (this.stream.getVideoTracks().length) {
                     return this.stream.getVideoTracks()[0].label;
                 }
             }
@@ -58,7 +58,7 @@ module.exports = State.extend({
         micName: {
             deps: ['type', 'stream'],
             fn: function () {
-                if (this.stream.getAudioTracks()) {
+                if (this.stream.getAudioTracks().length) {
                     return this.stream.getAudioTracks()[0].label;
                 }
             }
