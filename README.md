@@ -36,6 +36,7 @@ $ npm install otalk-model-media
 - `isVideo` - `{Boolean}`
 - `isScreen` - `{Boolean}`
 - `hasAudio` - `{Boolean}`
+- `hasVideo` - `{Boolean}`
 - `audioMonitoring` - `{Object}`
 
 ### Audio Monitoring Options
@@ -53,6 +54,7 @@ $ npm install otalk-model-media
 - `pauseVideo()`
 - `playVideo()`
 - `stop()`
+- `calculateAlternates()`
 
 ## License
 

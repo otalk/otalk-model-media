@@ -110,6 +110,12 @@ module.exports = State.extend({
                 return !!this.stream.getAudioTracks().length;
             }
         },
+        hasVideo: {
+            deps: ['stream'],
+            fn: function () {
+                return !!this.stream.getVideoTracks().length;
+            }
+        },
         isAudio: {
             deps: ['type'],
             fn: function () {
@@ -137,33 +143,7 @@ module.exports = State.extend({
             this.micName = this.stream.getAudioTracks()[0].label;
         }
 
-        this.alternates = [];
-
-        var tracks = this.stream.getVideoTracks();
-        tracks.forEach(function (track) {
-            var subStream = new webrtc.MediaStream();
-            subStream.addTrack(track);
-
-            var subURL = URL.createObjectURL(subStream);
-
-            var video = document.createElement('video');
-            video.src = subURL;
-
-            video.onloadedmetadata = function () {
-                self.alternates.push({
-                    width: video.videoWidth,
-                    height: video.videoHeight,
-                    url: subURL,
-                    stream: subStream
-                });
-                self.alternates.sort(function (a, b) {
-                    return a.width > b.width ? -1
-                         : a.width < b.width ? 1
-                         : 0;
-                });
-                self.trigger('change:alternates', self.alternates);
-            };
-        });
+        this.calculateAlternates();
 
         if (this.isLocal && this.hasAudio && this.audioMonitoring.detectSpeaking) {
             var audio = this.harker = hark(this.stream, this.audioMonitoring);
@@ -260,6 +240,38 @@ module.exports = State.extend({
         this.stream.stop();
         this.alternates.forEach(function (alternate) {
             alternate.stream.stop();
+        });
+    },
+
+    calculateAlternates: function () {
+        var self = this;
+
+        this.alternates = [];
+
+        var tracks = this.stream.getVideoTracks();
+        tracks.forEach(function (track) {
+            var subStream = new webrtc.MediaStream();
+            subStream.addTrack(track);
+
+            var subURL = URL.createObjectURL(subStream);
+
+            var video = document.createElement('video');
+            video.src = subURL;
+
+            video.onloadedmetadata = function () {
+                self.alternates.push({
+                    width: video.videoWidth,
+                    height: video.videoHeight,
+                    url: subURL,
+                    stream: subStream
+                });
+                self.alternates.sort(function (a, b) {
+                    return a.width > b.width ? -1
+                         : a.width < b.width ? 1
+                         : 0;
+                });
+                self.trigger('change:alternates', self.alternates);
+            };
         });
     }
 });
