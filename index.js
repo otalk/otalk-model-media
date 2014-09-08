@@ -24,6 +24,8 @@ module.exports = State.extend({
             type: 'string',
             values: ['local', 'remote']
         },
+        cameraName: 'string',
+        micName: 'string',
         audioMonitoring: ['object', true, function () {
             return {
                 detectSpeaking: false,
@@ -44,22 +46,6 @@ module.exports = State.extend({
                     return 'video';
                 } else {
                     return 'audio';
-                }
-            }
-        },
-        cameraName: {
-            deps: ['type', 'stream'],
-            fn: function () {
-                if (this.stream.getVideoTracks().length) {
-                    return this.stream.getVideoTracks()[0].label;
-                }
-            }
-        },
-        micName: {
-            deps: ['type', 'stream'],
-            fn: function () {
-                if (this.stream.getAudioTracks().length) {
-                    return this.stream.getAudioTracks()[0].label;
                 }
             }
         },
@@ -141,6 +127,16 @@ module.exports = State.extend({
     initialize: function () {
         var self = this;
 
+        // Save the camera and mic names before we might add additional
+        // filters to them which would affect the device labels.
+        if (this.stream.getVideoTracks().length) {
+            this.cameraName = this.stream.getVideoTracks()[0].label;
+        }
+
+        if (this.stream.getAudioTracks().length) {
+            this.micName = this.stream.getAudioTracks()[0].label;
+        }
+
         this.alternates = [];
 
         var tracks = this.stream.getVideoTracks();
@@ -169,12 +165,12 @@ module.exports = State.extend({
             };
         });
 
-        if (this.isLocal && this.audioMonitoring.detectSpeaking) {
+        if (this.isLocal && this.hasAudio && this.audioMonitoring.detectSpeaking) {
             var audio = this.harker = hark(this.stream, this.audioMonitoring);
-            var gain = this.gainController = new GainController(this.stream);
-            var timeout;
+            var gain, timeout;
 
             if (this.audioMonitoring.adjustMic) {
+                gain = this.gainController = new GainController(this.stream);
                 gain.setGain(0.5);
             }
             
