@@ -153,7 +153,7 @@ module.exports = State.extend({
                 gain = this.gainController = new GainController(this.stream);
                 gain.setGain(0.5);
             }
-            
+
             audio.on('speaking', function () {
                 self.speaking = true;
                 if (!self.audioPaused && self.audioMonitoring.adjustMic) {
@@ -185,16 +185,47 @@ module.exports = State.extend({
     },
 
     fit: function (width) {
+        var selected;
+
+        // Find the best match for the given size
         for (var i = 0, len = this.alternates.length; i < len; i++) {
             var alt = this.alternates[i];
             if (alt.width < width) {
-                this.simulcast = i;
-                return;
+                selected = i;
+                break;
+            }
+        }
+        
+        // None of the available videos fit inside the given dimension,
+        // so use the smallest one we have.
+        if (selected === undefined) {
+            selected = this.alternates.length - 1;
+        }
+
+        // It could be the case that the given width is *slightly*
+        // smaller than one of the alternates, and the next size down
+        // is tiny. Here we'll check if the next biggest video from our
+        // currently selected one is a closer fit for the desired width.
+        // If so, we can downscale that with less distortion than trying
+        // to upscale the (potentially tiny) currently selected video.
+        //
+        // This gives us better video quality, but at the expense of using
+        // more bandwidth.
+        if (selected > 0) {
+            var upscaleAlt = this.alternates[selected];
+            var upscale = Math.abs(width - upscaleAlt.width) / upscaleAlt.width;
+            console.log('upscale', upscale);
+
+            var downscaleAlt = this.alternates[selected - 1];
+            var downscale = Math.abs(width - downscaleAlt.width) / downscaleAlt.width;
+            console.log('Downscale', downscale);
+
+            if (downscale < upscale) {
+                selected = selected - 1;
             }
         }
 
-        // Fallback to the last in the set
-        this.simulcast = this.alternates.length - 1;
+        this.simulcast = selected;
     },
 
     pauseAudio: function () {
