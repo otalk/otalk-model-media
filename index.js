@@ -279,6 +279,12 @@ module.exports = State.extend({
 
         this.alternates = [];
 
+        // Firefox doesn't support creating new MediaStreams directly,
+        // so we can't calculate alternate stream dimensions.
+        if (webrtc.prefix !== 'webkit') {
+            return;
+        }
+
         var tracks = this.stream.getVideoTracks();
         tracks.forEach(function (track) {
             var subStream = new webrtc.MediaStream();
