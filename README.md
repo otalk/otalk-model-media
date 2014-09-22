@@ -12,8 +12,10 @@ $ npm install otalk-model-media
 
 - `id` - `{String}`
 - `stream` - `{Object}`
+- `session` - `{Any}`
+- `peer` - `{State}`
+- `claimed` - `{Boolean}`
 - `alterates` - `{Array}`
-- `owner` - `{Any}`
 - `focused` - `{Boolean}`
 - `ended` - `{Boolean}`
 - `audioPaused` - `{Boolean}`

@@ -7,7 +7,8 @@ var State = require('ampersand-state');
 module.exports = State.extend({
     props: {
         id: 'string',
-        owner: 'any',
+        session: 'any',
+        peer: 'state',
         alternates: 'array',
         simulcast: ['number', true, 0],
         thumbnail: 'string',
@@ -47,6 +48,12 @@ module.exports = State.extend({
                 } else {
                     return 'audio';
                 }
+            }
+        },
+        claimed: {
+            deps: ['peer'],
+            fn: function () {
+                return !!this.peer;
             }
         },
         videoURL: {
