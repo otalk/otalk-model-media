@@ -44,7 +44,6 @@ $ npm install otalk-model-media
 ### Audio Monitoring Options
 
 - `detectSpeaking` - `{Boolean}`
-- `adjustMic` - `{Boolean}`
 - `threshold` - `{Number}`
 - `interval` - `{Number}`
 

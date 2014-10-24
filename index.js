@@ -1,6 +1,5 @@
 var webrtc = require('webrtcsupport');
 var hark = require('hark');
-var GainController = require('mediastream-gain');
 var State = require('ampersand-state');
 
 
@@ -30,7 +29,6 @@ module.exports = State.extend({
         audioMonitoring: ['object', true, function () {
             return {
                 detectSpeaking: false,
-                adjustMic: false,
                 threshold: -50,
                 interval: 50,
                 smoothing: 0.1
@@ -154,31 +152,13 @@ module.exports = State.extend({
 
         if (this.isLocal && this.hasAudio && this.audioMonitoring.detectSpeaking) {
             var audio = this.harker = hark(this.stream, this.audioMonitoring);
-            var gain, timeout;
-
-            if (this.audioMonitoring.adjustMic) {
-                gain = this.gainController = new GainController(this.stream);
-                gain.setGain(0.5);
-            }
 
             audio.on('speaking', function () {
                 self.speaking = true;
-                if (!self.audioPaused && self.audioMonitoring.adjustMic) {
-                    gain.setGain(1);
-                }
             });
 
             audio.on('stopped_speaking', function () {
-                if (timeout) {
-                    clearTimeout(timeout);
-                }
-
-                timeout = setTimeout(function () {
-                    self.speaking = false;
-                    if (!self.audioPaused && self.audioMonitoring.adjustMic) {
-                        gain.setGain(0.5);
-                    }
-                });
+                self.speaking = false;
             });
 
             audio.on('volume_change', function (volume) {
