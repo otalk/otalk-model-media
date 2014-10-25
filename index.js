@@ -8,7 +8,7 @@ module.exports = State.extend({
         id: 'string',
         session: 'any',
         peer: 'state',
-        alternates: 'array',
+        alternates: ['array', true],
         simulcast: ['number', true, 0],
         thumbnail: 'string',
         stream: 'object',
@@ -55,7 +55,7 @@ module.exports = State.extend({
             }
         },
         videoURL: {
-            deps: ['isVideo', 'stream', 'simulcast', 'alternates'],
+            deps: ['isVideo', 'stream', 'simulcast'],
             fn: function () {
                 if (this.simulcast !== undefined && this.alternates.length > 1) {
                     if (!!this.alternates[this.simulcast]) {
@@ -167,7 +167,7 @@ module.exports = State.extend({
         }
 
         this.stream.onended = function () {
-            self.ended = true;
+            self.stop();
         };
     },
 
@@ -255,7 +255,15 @@ module.exports = State.extend({
 
     stop: function () {
         this.ended = true;
+
+        if (this.harker) {
+            this.harker.stop();
+            this.harker.releaseGroup('monitor');
+            delete this.harker;
+        }
+
         this.stream.stop();
+
         this.alternates.forEach(function (alternate) {
             alternate.stream.stop();
         });
