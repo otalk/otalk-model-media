@@ -14,7 +14,8 @@
     "beefy": "^2.1.1",
     "jshint": "^2.5.5",
     "localmedia": "^1.0.0",
-    "precommit-hook": "^1.0.7"
+    "precommit-hook": "^1.0.7",
+    "otalk-media-stream-view": "^2.0.0"
   },
   "homepage": "https://github.com/otalk/otalk-model-media",
   "keywords": [

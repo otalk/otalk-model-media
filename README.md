@@ -15,7 +15,8 @@ $ npm install otalk-model-media
 - `session` - `{Any}`
 - `peer` - `{State}`
 - `claimed` - `{Boolean}`
-- `alterates` - `{Array}`
+- `videoSubStreams` - `{Array}`
+- `activeVideoStream` - `{Int}`
 - `focused` - `{Boolean}`
 - `ended` - `{Boolean}`
 - `audioPaused` - `{Boolean}`
@@ -28,10 +29,10 @@ $ npm install otalk-model-media
 - `cameraName` - `{String}`
 - `micName` - `{String}`
 - `thumbnail` - `{String}`
-- `videoURL` - `{String}`
+- `videoURLs` - `{Array}`
+- `lowResVideoURL` - `{String}`
+- `highResVideoURL` - `{String}`
 - `audioURL` - `{String}`
-- `height` - `{Number}`
-- `width` - `{Number}`
 - `isLocal` - `{Boolean}`
 - `isRemote` - `{Boolean}`
 - `isAudio` - `{Boolean}`
@@ -40,6 +41,9 @@ $ npm install otalk-model-media
 - `hasAudio` - `{Boolean}`
 - `hasVideo` - `{Boolean}`
 - `audioMonitoring` - `{Object}`
+- `highResVideoAvailable` - `{Boolean}`
+- `highResVideoActive` - `{Boolean}`
+- `lowResVideoActive` - `{Boolean}`
 
 ### Audio Monitoring Options
 

@@ -1,5 +1,5 @@
-var webrtc = require('webrtcsupport');
 var hark = require('hark');
+var webrtc = require('webrtcsupport');
 var State = require('ampersand-state');
 
 
@@ -8,10 +8,10 @@ module.exports = State.extend({
         id: 'string',
         session: 'any',
         peer: 'state',
-        alternates: ['array', true],
-        simulcast: ['number', true, 0],
         thumbnail: 'string',
         stream: 'object',
+        videoSubStreams: ['array', true],
+        activeVideoStream: 'number',
         focused: 'boolean',
         ended: 'boolean',
         audioPaused: 'boolean',
@@ -54,20 +54,46 @@ module.exports = State.extend({
                 return !!this.peer;
             }
         },
-        videoURL: {
-            deps: ['isVideo', 'stream', 'simulcast'],
+        videoURLs: {
+            deps: ['isVideo', 'stream', 'videoSubStreams'],
             fn: function () {
-                if (this.simulcast !== undefined && this.alternates.length > 1) {
-                    if (!!this.alternates[this.simulcast]) {
-                        return this.alternates[this.simulcast].url;
-                    }
-                }
+                var urls = [];
 
-                if (this.isVideo) {
-                    return URL.createObjectURL(this.stream);
-                }
+                this.videoSubStreams.forEach(function (substream) {
+                    urls.push(substream.url);
+                });
 
-                return '';
+                return urls;
+            }
+        },
+        lowResVideoURL: {
+            deps: ['videoSubStreams'],
+            fn: function () {
+                return (this.videoSubStreams[0] || {}).url || '';
+            }
+        },
+        highResVideoURL: {
+            deps: ['videoSubStreams', 'lowResVideoURL'],
+            fn: function () {
+                return (this.videoSubStreams[1] || {}).url || this.lowResVideoURL;
+            }
+        },
+        highResVideoAvailable: {
+            deps: ['videoSubStreams'],
+            fn: function () {
+                return this.videoSubStreams.length > 1;
+            }
+        },
+        lowResVideoActive: {
+            deps: ['activeVideoStream'],
+            fn: function () {
+                return !this.activeVideoStream || this.activeVideoStream === 0;
+            }
+        },
+        highResVideoActive: {
+            deps: ['activeVideoStream'],
+            fn: function () {
+                return this.activeVideoStream > 0;
             }
         },
         audioURL: {
@@ -77,24 +103,6 @@ module.exports = State.extend({
                     return URL.createObjectURL(this.stream);
                 }
                 return '';
-            }
-        },
-        height: {
-            deps: ['type', 'simulcast', 'alternates'],
-            fn: function () {
-                if (this.type === 'video' && !!this.alternates[this.simulcast]) {
-                    return this.alternates[this.simulcast].height;
-                }
-                return 0;
-            }
-        },
-        width: {
-            deps: ['type', 'simulcast', 'alternates'],
-            fn: function () {
-                if (this.type === 'video' && !!this.alternates[this.simulcast]) {
-                    return this.alternates[this.simulcast].width;
-                }
-                return 0;
             }
         },
         isLocal: {
@@ -148,7 +156,7 @@ module.exports = State.extend({
             this.micName = this.stream.getAudioTracks()[0].label;
         }
 
-        this.calculateAlternates();
+        this._extractVideoTracks();
 
         if (this.isLocal && this.hasAudio && this.audioMonitoring.detectSpeaking) {
             var audio = this.harker = hark(this.stream, this.audioMonitoring);
@@ -169,50 +177,6 @@ module.exports = State.extend({
         this.stream.onended = function () {
             self.stop();
         };
-    },
-
-    fit: function (width) {
-        var selected;
-
-        // Find the best match for the given size
-        for (var i = 0, len = this.alternates.length; i < len; i++) {
-            var alt = this.alternates[i];
-            if (alt.width < width) {
-                selected = i;
-                break;
-            }
-        }
-        
-        // None of the available videos fit inside the given dimension,
-        // so use the smallest one we have.
-        if (selected === undefined) {
-            selected = this.alternates.length - 1;
-        }
-
-        // It could be the case that the given width is *slightly*
-        // smaller than one of the alternates, and the next size down
-        // is tiny. Here we'll check if the next biggest video from our
-        // currently selected one is a closer fit for the desired width.
-        // If so, we can downscale that with less distortion than trying
-        // to upscale the (potentially tiny) currently selected video.
-        //
-        // This gives us better video quality, but at the expense of using
-        // more bandwidth.
-        if (selected > 0) {
-            var upscaleAlt = this.alternates[selected];
-            var upscale = Math.abs(width - upscaleAlt.width) / upscaleAlt.width;
-            console.log('upscale', upscale);
-
-            var downscaleAlt = this.alternates[selected - 1];
-            var downscale = Math.abs(width - downscaleAlt.width) / downscaleAlt.width;
-            console.log('Downscale', downscale);
-
-            if (downscale < upscale) {
-                selected = selected - 1;
-            }
-        }
-
-        this.simulcast = selected;
     },
 
     pauseAudio: function () {
@@ -237,8 +201,8 @@ module.exports = State.extend({
         tracks.forEach(function (track) {
             track.enabled = false;
         });
-        this.alternates.forEach(function (alternate) {
-            alternate.stream.getVideoTracks()[0].enabled = false;
+        this.videoSubStreams.forEach(function (substream) {
+            substream.stream.getVideoTracks()[0].enabled = false;
         });
     },
 
@@ -248,8 +212,8 @@ module.exports = State.extend({
         tracks.forEach(function (track) {
             track.enabled = true;
         });
-        this.alternates.forEach(function (alternate) {
-            alternate.stream.getVideoTracks()[0].enabled = true;
+        this.videoSubStreams.forEach(function (substream) {
+            substream.stream.getVideoTracks()[0].enabled = true;
         });
     },
 
@@ -264,46 +228,28 @@ module.exports = State.extend({
 
         this.stream.stop();
 
-        this.alternates.forEach(function (alternate) {
-            alternate.stream.stop();
+        this.videoSubStreams.forEach(function (substream) {
+            substream.stream.stop();
+            URL.revokeObjectURL(substream.url);
         });
+
+        URL.revokeObjectURL(this.audioURL);
     },
 
-    calculateAlternates: function () {
-        var self = this;
-
-        this.alternates = [];
-
-        // Firefox doesn't support creating new MediaStreams directly,
-        // so we can't calculate alternate stream dimensions.
-        if (webrtc.prefix !== 'webkit') {
-            return;
-        }
+    _extractVideoTracks: function () {
+        var substreams = [];
 
         var tracks = this.stream.getVideoTracks();
-        tracks.forEach(function (track) {
-            var subStream = new webrtc.MediaStream();
-            subStream.addTrack(track);
+        for (var i = 0, len = tracks.length; i < len; i++) {
+            var track = tracks[i];
+            var substream = new webrtc.MediaStream();
+            substream.addTrack(track);
+            substreams.push({
+                url: URL.createObjectURL(substream),
+                stream: substream
+            });
+        }
 
-            var subURL = URL.createObjectURL(subStream);
-
-            var video = document.createElement('video');
-            video.src = subURL;
-
-            video.onloadedmetadata = function () {
-                self.alternates.push({
-                    width: video.videoWidth,
-                    height: video.videoHeight,
-                    url: subURL,
-                    stream: subStream
-                });
-                self.alternates.sort(function (a, b) {
-                    return a.width > b.width ? -1
-                         : a.width < b.width ? 1
-                         : 0;
-                });
-                self.trigger('change:alternates', self.alternates);
-            };
-        });
+        this.videoSubStreams = substreams;
     }
 });
