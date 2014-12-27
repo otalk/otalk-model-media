@@ -239,7 +239,7 @@ module.exports = State.extend({
     _extractVideoTracks: function () {
         var substreams = [];
 
-        if (this.stream.addTrack) {
+        if (webrtc.prefix === 'webkit') {
             var tracks = this.stream.getVideoTracks();
             for (var i = 0, len = tracks.length; i < len; i++) {
                 var track = tracks[i];
