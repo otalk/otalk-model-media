@@ -239,14 +239,21 @@ module.exports = State.extend({
     _extractVideoTracks: function () {
         var substreams = [];
 
-        var tracks = this.stream.getVideoTracks();
-        for (var i = 0, len = tracks.length; i < len; i++) {
-            var track = tracks[i];
-            var substream = new webrtc.MediaStream();
-            substream.addTrack(track);
+        if (this.stream.addTrack) {
+            var tracks = this.stream.getVideoTracks();
+            for (var i = 0, len = tracks.length; i < len; i++) {
+                var track = tracks[i];
+                var substream = new webrtc.MediaStream();
+                substream.addTrack(track);
+                substreams.push({
+                    url: URL.createObjectURL(substream),
+                    stream: substream
+                });
+            }
+        } else {
             substreams.push({
-                url: URL.createObjectURL(substream),
-                stream: substream
+                url: URL.createObjectURL(this.stream),
+                stream: this.stream
             });
         }
 
