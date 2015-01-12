@@ -226,10 +226,15 @@ module.exports = State.extend({
             delete this.harker;
         }
 
-        this.stream.stop();
+
+        if (this.stream && this.stream.stop()) {
+            this.stream.stop();
+        }
 
         this.videoSubStreams.forEach(function (substream) {
-            substream.stream.stop();
+            if (substream.stream && substream.stream.stop) {
+                substream.stream.stop();
+            }
             URL.revokeObjectURL(substream.url);
         });
 
