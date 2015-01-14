@@ -158,7 +158,7 @@ module.exports = State.extend({
 
         this._extractVideoTracks();
 
-        if (this.isLocal && this.hasAudio && this.audioMonitoring.detectSpeaking) {
+        if (webrtc.webAudio && this.isLocal && this.hasAudio && this.audioMonitoring.detectSpeaking) {
             var audio = this.harker = hark(this.stream, this.audioMonitoring);
 
             audio.on('speaking', function () {
