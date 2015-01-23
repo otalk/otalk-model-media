@@ -227,7 +227,7 @@ module.exports = State.extend({
         }
 
 
-        if (this.stream && this.stream.stop()) {
+        if (this.stream && this.stream.stop) {
             this.stream.stop();
         }
 
