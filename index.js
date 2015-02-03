@@ -6,7 +6,7 @@ var State = require('ampersand-state');
 module.exports = State.extend({
     props: {
         id: 'string',
-        session: 'any',
+        session: 'state',
         peer: 'state',
         thumbnail: 'string',
         stream: 'object',
