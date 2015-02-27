@@ -181,40 +181,48 @@ module.exports = State.extend({
 
     pauseAudio: function () {
         this.audioPaused = true;
-        var tracks = this.stream.getAudioTracks();
-        tracks.forEach(function (track) {
-            track.enabled = false;
-        });
+        if (this.isLocal) {
+            var tracks = this.stream.getAudioTracks();
+            tracks.forEach(function (track) {
+                track.enabled = false;
+            });
+        }
     },
 
     playAudio: function () {
         this.audioPaused = false;
-        var tracks = this.stream.getAudioTracks();
-        tracks.forEach(function (track) {
-            track.enabled = true;
-        });
+        if (this.isLocal) {
+            var tracks = this.stream.getAudioTracks();
+            tracks.forEach(function (track) {
+                track.enabled = true;
+            });
+        }
     },
 
     pauseVideo: function () {
         this.videoPaused = true;
-        var tracks = this.stream.getVideoTracks();
-        tracks.forEach(function (track) {
-            track.enabled = false;
-        });
-        this.videoSubStreams.forEach(function (substream) {
-            substream.stream.getVideoTracks()[0].enabled = false;
-        });
+        if (this.isLocal) {
+            var tracks = this.stream.getVideoTracks();
+            tracks.forEach(function (track) {
+                track.enabled = false;
+            });
+            this.videoSubStreams.forEach(function (substream) {
+                substream.stream.getVideoTracks()[0].enabled = false;
+            });
+        }
     },
 
     playVideo: function () {
         this.videoPaused = false;
-        var tracks = this.stream.getVideoTracks();
-        tracks.forEach(function (track) {
-            track.enabled = true;
-        });
-        this.videoSubStreams.forEach(function (substream) {
-            substream.stream.getVideoTracks()[0].enabled = true;
-        });
+        if (this.isLocal) {
+            var tracks = this.stream.getVideoTracks();
+            tracks.forEach(function (track) {
+                track.enabled = true;
+            });
+            this.videoSubStreams.forEach(function (substream) {
+                substream.stream.getVideoTracks()[0].enabled = true;
+            });
+        }
     },
 
     stop: function () {
