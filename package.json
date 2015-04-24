@@ -5,9 +5,9 @@
   "author": "Lance Stout <lance@andyet.net>",
   "bugs": "https://github.com/otalk/otalk-model-media/issues",
   "dependencies": {
-    "webrtcsupport": "^1.0.0",
-    "mediastream-gain": "^1.0.0",
-    "hark": "^1.1.1"
+    "ampersand-state": "^4.5.3",
+    "hark": "^1.1.1",
+    "webrtcsupport": "^2.0.0"
   },
   "devDependencies": {
     "ampersand-view": "^7.1.1",

@@ -1,275 +1,380 @@
-var hark = require('hark');
-var webrtc = require('webrtcsupport');
 var State = require('ampersand-state');
+var WebRTC = require('webrtcsupport');
+var createHarker = require('hark');
 
 
 module.exports = State.extend({
+    generateId: function (attrs) {
+        return attrs.stream.id;
+    },
+
     props: {
-        id: 'string',
-        session: 'state',
-        peer: 'state',
-        thumbnail: 'string',
         stream: 'object',
-        videoSubStreams: ['array', true],
-        activeVideoStream: 'number',
-        focused: 'boolean',
-        ended: 'boolean',
-        audioPaused: 'boolean',
-        videoPaused: 'boolean',
-        volume: 'number',
-        speaking: 'boolean',
-        activeSpeaker: 'boolean',
-        isScreen: 'boolean',
         origin: {
             type: 'string',
-            values: ['local', 'remote']
+            default: 'local',
+            values: [ 'local', 'remote' ]
         },
-        cameraName: 'string',
-        micName: 'string',
-        audioMonitoring: ['object', true, function () {
-            return {
-                detectSpeaking: false,
-                threshold: -50,
-                interval: 50,
-                smoothing: 0.1
-            };
-        }]
+
+        volume: {
+            type: 'number',
+            required: true,
+            default: -1000
+        },
+
+        selectedVideoTrackId: 'string',
+
+        isFocused: 'boolean',
+        isScreen: 'boolean',
+        isEnded: 'boolean',
+        isSpeaking: 'boolean',
+        isActiveSpeaker: 'boolean',
+
+        // Allow for easy integration with various
+        // context managers:
+        peer: 'state',
+        session: 'state'
+    },
+
+    session: {
+        _audioMute: 'boolean',
+        _videoMute: 'boolean',
+        _hardAudioMute: 'boolean',
+        _hardVideoMute: 'boolean',
+        _remoteAudioMute: 'boolean',
+        _remoteVideoMute: 'boolean'
     },
 
     derived: {
-        type: {
-            deps: ['stream'],
-            fn: function () {
-                var videos = this.stream.getVideoTracks();
-                if (videos.length) {
-                    return 'video';
-                } else {
-                    return 'audio';
-                }
-            }
-        },
-        claimed: {
-            deps: ['peer'],
-            fn: function () {
-                return !!this.peer;
-            }
-        },
-        videoURLs: {
-            deps: ['isVideo', 'stream', 'videoSubStreams'],
-            fn: function () {
-                var urls = [];
-
-                this.videoSubStreams.forEach(function (substream) {
-                    urls.push(substream.url);
-                });
-
-                return urls;
-            }
-        },
-        lowResVideoURL: {
-            deps: ['videoSubStreams'],
-            fn: function () {
-                return (this.videoSubStreams[0] || {}).url || '';
-            }
-        },
-        highResVideoURL: {
-            deps: ['videoSubStreams', 'lowResVideoURL'],
-            fn: function () {
-                return (this.videoSubStreams[1] || {}).url || this.lowResVideoURL;
-            }
-        },
-        highResVideoAvailable: {
-            deps: ['videoSubStreams'],
-            fn: function () {
-                return this.videoSubStreams.length > 1;
-            }
-        },
-        lowResVideoActive: {
-            deps: ['activeVideoStream'],
-            fn: function () {
-                return !this.activeVideoStream || this.activeVideoStream === 0;
-            }
-        },
-        highResVideoActive: {
-            deps: ['activeVideoStream'],
-            fn: function () {
-                return this.activeVideoStream > 0;
-            }
-        },
-        audioURL: {
-            deps: ['stream', 'hasAudio'],
-            fn: function () {
-                if (this.hasAudio) {
-                    return URL.createObjectURL(this.stream);
-                }
-                return '';
-            }
-        },
         isLocal: {
-            deps: ['origin'],
+            deps: [ 'origin' ],
             fn: function () {
                 return this.origin === 'local';
             }
         },
         isRemote: {
-            deps: ['origin'],
+            deps: [ 'origin' ],
             fn: function () {
                 return this.origin === 'remote';
             }
         },
-        hasAudio: {
-            deps: ['stream'],
+        isClaimed: {
+            deps: [ 'peer' ],
             fn: function () {
-                return !!this.stream.getAudioTracks().length;
+                return !!this.peer;
+            }
+        },
+        audioMuted: {
+            deps: [ '_audioMute', '_remoteAudioMute', '_hardAudioMute' ],
+            fn: function () {
+                return this._hardAudioMute || this._remoteAudioMute || this._audioMute;
+            }
+        },
+        videoMuted: {
+            deps: [ '_videoMute', '_remoteVideoMute', '_hardVideoMute' ],
+            fn: function () {
+                return this._hardVideoMute || this._remoteVideoMute || this._videoMute;
+            }
+        },
+        remoteAudioMuted: {
+            deps: [ '_remoteAudioMute' ],
+            fn: function () {
+                return this._remoteAudioMute;
+            }
+        },
+        remoteVideoMuted: {
+            deps: [ '_remoteVideoMute' ],
+            fn: function () {
+                return this._remoteVideoMute;
+            }
+        },
+        hasAudio: {
+            cache: false,
+            deps: [ 'stream', 'synth-recheck-tracks' ],
+            fn: function () {
+                var audioTracks = this.stream.getAudioTracks().filter(function (track) {
+                    if (track.readyState) {
+                        return track.readyState === 'live';
+                    } else {
+                        return true;
+                    }
+                });
+
+                return !!audioTracks.length;
             }
         },
         hasVideo: {
-            deps: ['stream'],
+            cache: false,
+            deps: [ 'stream', 'synth-recheck-tracks' ],
             fn: function () {
-                return !!this.stream.getVideoTracks().length;
+                var videoTracks = this.stream.getVideoTracks().filter(function (track) {
+                    if (track.readyState) {
+                        return track.readyState === 'live';
+                    } else {
+                        return true;
+                    }
+                });
+
+                return !!videoTracks.length;
             }
         },
-        isAudio: {
-            deps: ['type'],
+        isAudioOnly: {
+            deps: [ 'hasAudio', 'hasVideo' ],
             fn: function () {
-                return this.type === 'audio';
+                return this.hasAudio && !this.hasVideo;
             }
         },
         isVideo: {
-            deps: ['type'],
+            deps: [ 'hasVideo' ],
             fn: function () {
-                return this.type === 'video';
+                return this.hasVideo;
+            }
+        },
+        cameraName: {
+            cache: false,
+            deps: [ 'stream', 'hasVideo', 'synth-recheck-tracks' ],
+            fn: function () {
+                if (!this.hasVideo || !this.isLocal) {
+                    return '';
+                }
+
+                var videoTrack = this.stream.getVideoTracks()[0];
+                return videoTrack.label;
+            }
+        },
+        microphoneName: {
+            cache: false,
+            deps: [ 'stream', 'hasAudio', 'synth-recheck-tracks' ],
+            fn: function () {
+                if (!this.hasAudio || !this.isLocal) {
+                    return '';
+                }
+
+                var audioTrack = this.stream.getAudioTracks()[0];
+                return audioTrack.label;
             }
         }
+    },
+
+    startVolumeMonitor: function (config) {
+        var self = this;
+
+        if (!WebRTC.supportWebAudio) {
+            return;
+        }
+
+        var monitor = this._harker = createHarker(this.stream, config);
+
+        monitor.on('speaking', function () {
+            self.isSpeakng = true;
+        });
+
+        monitor.on('stopped_speaking', function () {
+            self.isSpeaking = false;
+        });
+
+        monitor.on('volume_change', function (volume) {
+            self.volume = volume;
+        });
+    },
+
+    stopVolumeMonitor: function () {
+        if (this._harker) {
+            this._harker.stop();
+            this._harker.releaseGroup('monitor');
+            delete this._harker;
+        }
+
+        this.isSpeaking = false;
+        this.unset('volume');
+    },
+
+    playAudio: function (remote) {
+        if (remote && this.isRemote) {
+            this._remoteAudioMute = false;
+            return;
+        }
+
+        if (this.isLocal) {
+            var tracks = this.stream.getAudioTracks();
+            tracks.forEach(function (track) {
+                track.enabled = true;
+            });
+        }
+
+        this._audioMute = false;
+    },
+
+    muteAudio: function (remote) {
+        if (remote && this.isRemote) {
+            this._remoteAudioMute = true;
+            return;
+        }
+
+        this._audioMute = true;
+
+        if (this.isLocal) {
+            var tracks = this.stream.getAudioTracks();
+            tracks.forEach(function (track) {
+                track.enabled = false;
+            });
+        }
+    },
+
+    playVideo: function (remote) {
+        if (remote && this.isRemote) {
+            this._remoteVideoMute = false;
+            return;
+        }
+
+        if (this.isLocal) {
+            var tracks = this.stream.getVideoTracks();
+            tracks.forEach(function (track) {
+                track.enabled = true;
+            });
+        }
+
+        this._videoMute = false;
+    },
+
+    muteVideo: function (remote) {
+        if (remote && this.isRemote) {
+            this._remoteVideoMute = true;
+            return;
+        }
+
+        this._videoMute = true;
+
+        if (this.isLocal) {
+            var tracks = this.stream.getVideoTracks();
+            tracks.forEach(function (track) {
+                track.enabled = false;
+            });
+        }
+    },
+
+    toggleAudio: function () {
+        if (this._audioMute) {
+            this.playAudio();
+        } else {
+            this.muteAudio();
+        }
+    },
+
+    toggleVideo: function () {
+        if (this._videoMute) {
+            this.playVideo();
+        } else {
+            this.muteVideo();
+        }
+    },
+
+    getTrack: function (trackId) {
+        if (this.stream.getTrackById) {
+            return this.stream.getTrackById(trackId);
+        }
+
+        var foundTrack = null;
+        this.stream.getTracks().forEach(function (track) {
+            if (track.id === trackId) {
+                foundTrack = track;
+            }
+        });
+
+        return foundTrack;
+    },
+
+    createStreamForSelectedVideoTrack: function () {
+        if (WebRTC.prefix !== 'webkit' || !this.selectedVideoTrackId) {
+            return this.stream;
+        }
+
+        var track = this.getTrack(this.selectedVideoTrackId);
+        if (!track) {
+            return this.stream;
+        }
+
+        var newStream = new WebRTC.MediaStream();
+
+        newStream.addTrack(track);
+
+        this.stream.getAudioTracks().forEach(function (audioTrack) {
+            newStream.addTrack(audioTrack);
+        });
+
+        return newStream;
+    },
+
+    stop: function () {
+        this.stopVolumeMonitor();
+
+        this.stream.getTracks().forEach(function (track) {
+            if (track.readyState !== 'ended') {
+                track.stop();
+            }
+        });
+
+        this.isEnded = true;
     },
 
     initialize: function () {
         var self = this;
 
-        // Save the camera and mic names before we might add additional
-        // filters to them which would affect the device labels.
-        if (this.stream.getVideoTracks().length) {
-            this.cameraName = this.stream.getVideoTracks()[0].label;
-        }
+        this.id = this.generateId(this);
 
-        if (this.stream.getAudioTracks().length) {
-            this.micName = this.stream.getAudioTracks()[0].label;
-        }
+        this.stream.addEventListener('ended', function () {
+            self.isEnded = true;
+        });
 
-        this._extractVideoTracks();
+        this.stream.addEventListener('inactive', function () {
+            self.isEnded = true;
+        });
 
-        if (webrtc.supportWebAudio && this.isLocal && this.hasAudio && this.audioMonitoring.detectSpeaking) {
-            var audio = this.harker = hark(this.stream, this.audioMonitoring);
+        this.stream.getTracks().forEach(function (track) {
+            self._registerTrackEvents(track);
+        });
 
-            audio.on('speaking', function () {
-                self.speaking = true;
-            });
+        this.stream.addEventListener('addtrack', function (e) {
+            self._registerTrackEvents(e.track);
+        });
 
-            audio.on('stopped_speaking', function () {
-                self.speaking = false;
-            });
+        this.stream.addEventListener('removetrack', function () {
+            self.trigger('change:synth-recheck-tracks');
+        });
 
-            audio.on('volume_change', function (volume) {
-                self.volume = volume;
-            });
-        }
+        self.trigger('change:synth-recheck-tracks');
+    },
 
-        this.stream.onended = function () {
-            self.stop();
+    _registerTrackEvents: function (track) {
+        var self = this;
+
+        track.onended = function () {
+            self.trigger('change:synth-recheck-tracks');
+        };
+
+        track.onmute = function () {
+            self._handleTrackMuteChange(track);
+        };
+
+        track.onunmute = function () {
+            self._handleTrackMuteChange(track);
         };
     },
 
-    pauseAudio: function () {
-        this.audioPaused = true;
-        if (this.isLocal) {
-            var tracks = this.stream.getAudioTracks();
-            tracks.forEach(function (track) {
-                track.enabled = false;
-            });
-        }
-    },
-
-    playAudio: function () {
-        this.audioPaused = false;
-        if (this.isLocal) {
-            var tracks = this.stream.getAudioTracks();
-            tracks.forEach(function (track) {
-                track.enabled = true;
-            });
-        }
-    },
-
-    pauseVideo: function () {
-        this.videoPaused = true;
-        if (this.isLocal) {
-            var tracks = this.stream.getVideoTracks();
-            tracks.forEach(function (track) {
-                track.enabled = false;
-            });
-            this.videoSubStreams.forEach(function (substream) {
-                substream.stream.getVideoTracks()[0].enabled = false;
-            });
-        }
-    },
-
-    playVideo: function () {
-        this.videoPaused = false;
-        if (this.isLocal) {
-            var tracks = this.stream.getVideoTracks();
-            tracks.forEach(function (track) {
-                track.enabled = true;
-            });
-            this.videoSubStreams.forEach(function (substream) {
-                substream.stream.getVideoTracks()[0].enabled = true;
-            });
-        }
-    },
-
-    stop: function () {
-        this.ended = true;
-
-        if (this.harker) {
-            this.harker.stop();
-            this.harker.releaseGroup('monitor');
-            delete this.harker;
+    _handleTrackMuteChange: function (track) {
+        if (track.kind === 'audio') {
+            this._hardAudioMute = track.muted;
+            return;
         }
 
-
-        if (this.stream && this.stream.stop) {
-            this.stream.stop();
-        }
-
-        this.videoSubStreams.forEach(function (substream) {
-            if (substream.stream && substream.stream.stop) {
-                substream.stream.stop();
+        var videoTracks = this.stream.getVideoTracks();
+        var allMuted = true;
+        videoTracks.forEach(function (videoTrack) {
+            if (!videoTrack.muted) {
+                allMuted = false;
             }
-            URL.revokeObjectURL(substream.url);
         });
 
-        URL.revokeObjectURL(this.audioURL);
-    },
-
-    _extractVideoTracks: function () {
-        var substreams = [];
-
-        if (webrtc.prefix === 'webkit') {
-            var tracks = this.stream.getVideoTracks();
-            for (var i = 0, len = tracks.length; i < len; i++) {
-                var track = tracks[i];
-                var substream = new webrtc.MediaStream();
-                substream.addTrack(track);
-                substreams.push({
-                    url: URL.createObjectURL(substream),
-                    stream: substream
-                });
-            }
-        } else {
-            substreams.push({
-                url: URL.createObjectURL(this.stream),
-                stream: this.stream
-            });
-        }
-
-        this.videoSubStreams = substreams;
+        this._hardVideoMute = allMuted;
     }
 });

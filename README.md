@@ -14,52 +14,32 @@ $ npm install otalk-model-media
 - `stream` - `{Object}`
 - `session` - `{Any}`
 - `peer` - `{State}`
-- `claimed` - `{Boolean}`
-- `videoSubStreams` - `{Array}`
-- `activeVideoStream` - `{Int}`
-- `focused` - `{Boolean}`
-- `ended` - `{Boolean}`
-- `audioPaused` - `{Boolean}`
-- `videoPaused` - `{Boolean}`
+- `selectedVideoTrackId` - `{String}`
+- `isFocused` - `{Boolean}`
+- `isEnded` - `{Boolean}`
+- `audioMuted` - `{Boolean}`
+- `videoMuted` - `{Boolean}`
 - `volume` - `{Number}`
-- `speaking` - `{Boolean}`
-- `activeSpeaker` - `{Boolean}`
+- `isSpeaking` - `{Boolean}`
+- `isActiveSpeaker` - `{Boolean}`
 - `origin` - `{String}`
-- `type` - `{String}`
-- `cameraName` - `{String}`
-- `micName` - `{String}`
-- `thumbnail` - `{String}`
-- `videoURLs` - `{Array}`
-- `lowResVideoURL` - `{String}`
-- `highResVideoURL` - `{String}`
-- `audioURL` - `{String}`
 - `isLocal` - `{Boolean}`
 - `isRemote` - `{Boolean}`
-- `isAudio` - `{Boolean}`
+- `isAudioOnly` - `{Boolean}`
 - `isVideo` - `{Boolean}`
 - `isScreen` - `{Boolean}`
 - `hasAudio` - `{Boolean}`
 - `hasVideo` - `{Boolean}`
-- `audioMonitoring` - `{Object}`
-- `highResVideoAvailable` - `{Boolean}`
-- `highResVideoActive` - `{Boolean}`
-- `lowResVideoActive` - `{Boolean}`
-
-### Audio Monitoring Options
-
-- `detectSpeaking` - `{Boolean}`
-- `threshold` - `{Number}`
-- `interval` - `{Number}`
 
 ## Methods
 
-- `fit(width)`
-- `pauseAudio()`
-- `playAudio()`
-- `pauseVideo()`
-- `playVideo()`
+- `muteAudio([remoteSignaled])`
+- `playAudio([remoteSignaled])`
+- `muteVideo([remoteSignaled])`
+- `playVideo([remoteSignaled)`
+- `startAudioMonitor()`
+- `stopAudioMonitor()`
 - `stop()`
-- `calculateAlternates()`
 
 ## License
 
