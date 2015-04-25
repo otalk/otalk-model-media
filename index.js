@@ -24,11 +24,11 @@ module.exports = State.extend({
 
         selectedVideoTrackId: 'string',
 
-        isFocused: 'boolean',
-        isScreen: 'boolean',
-        isEnded: 'boolean',
-        isSpeaking: 'boolean',
-        isActiveSpeaker: 'boolean',
+        isFocused: [ 'boolean', true, false],
+        isScreen: [ 'boolean', true, false],
+        isEnded: [ 'boolean', true, false],
+        isSpeaking: [ 'boolean', true, false],
+        isActiveSpeaker: [ 'boolean', true, false],
 
         // Allow for easy integration with various
         // context managers:
@@ -37,12 +37,12 @@ module.exports = State.extend({
     },
 
     session: {
-        _audioMute: 'boolean',
-        _videoMute: 'boolean',
-        _hardAudioMute: 'boolean',
-        _hardVideoMute: 'boolean',
-        _remoteAudioMute: 'boolean',
-        _remoteVideoMute: 'boolean'
+        _audioMute: [ 'boolean', true, false ],
+        _videoMute: [ 'boolean', true, false ],
+        _hardAudioMute: [ 'boolean', true, false ],
+        _hardVideoMute: [ 'boolean', true, false ],
+        _remoteAudioMute: [ 'boolean', true, false ],
+        _remoteVideoMute: [ 'boolean', true, false ]
     },
 
     derived: {
