@@ -159,7 +159,7 @@ module.exports = State.extend({
     startVolumeMonitor: function (config) {
         var self = this;
 
-        if (!WebRTC.supportWebAudio) {
+        if (!WebRTC.supportWebAudio || !this.hasAudio) {
             return;
         }
 
