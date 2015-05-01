@@ -65,15 +65,31 @@ module.exports = State.extend({
             }
         },
         audioMuted: {
-            deps: [ '_audioMute', '_remoteAudioMute', '_hardAudioMute' ],
+            deps: [ 'isLocal', '_audioMute', '_remoteAudioMute', '_hardAudioMute' ],
             fn: function () {
-                return this._hardAudioMute || this._remoteAudioMute || this._audioMute;
+                if (this._audioMute) {
+                    return true;
+                }
+
+                if (this.isLocal) {
+                    return this._hardAudioMute;
+                } else {
+                    return this._remoteAudioMute;
+                }
             }
         },
         videoMuted: {
-            deps: [ '_videoMute', '_remoteVideoMute', '_hardVideoMute' ],
+            deps: [ 'isLocal', '_videoMute', '_remoteVideoMute', '_hardVideoMute' ],
             fn: function () {
-                return this._hardVideoMute || this._remoteVideoMute || this._videoMute;
+                if (this._videoMute) {
+                    return true;
+                }
+
+                if (this.isLocal) {
+                    return this._hardAudioMute;
+                } else {
+                    return this._remoteAudioMute;
+                }
             }
         },
         remoteAudioMuted: {
@@ -93,7 +109,7 @@ module.exports = State.extend({
             fn: function () {
                 var audioTracks = this.stream.getAudioTracks().filter(function (track) {
                     if (track.readyState) {
-                        return track.readyState === 'live';
+                        return track.readyState !== 'ended';
                     } else {
                         return true;
                     }
@@ -107,7 +123,7 @@ module.exports = State.extend({
             fn: function () {
                 var videoTracks = this.stream.getVideoTracks().filter(function (track) {
                     if (track.readyState) {
-                        return track.readyState === 'live';
+                        return track.readyState !== 'ended';
                     } else {
                         return true;
                     }
@@ -348,13 +364,15 @@ module.exports = State.extend({
             self.trigger('change:synth-recheck-tracks');
         };
 
-        track.onmute = function () {
-            self._handleTrackMuteChange(track);
-        };
+        if (this.isLocal) {
+            track.onmute = function () {
+                self._handleTrackMuteChange(track);
+            };
 
-        track.onunmute = function () {
-            self._handleTrackMuteChange(track);
-        };
+            track.onunmute = function () {
+                self._handleTrackMuteChange(track);
+            };
+        }
     },
 
     _handleTrackMuteChange: function (track) {
