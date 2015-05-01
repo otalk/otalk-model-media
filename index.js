@@ -89,7 +89,6 @@ module.exports = State.extend({
             }
         },
         hasAudio: {
-            cache: false,
             deps: [ 'stream', 'synth-recheck-tracks' ],
             fn: function () {
                 var audioTracks = this.stream.getAudioTracks().filter(function (track) {
@@ -104,7 +103,6 @@ module.exports = State.extend({
             }
         },
         hasVideo: {
-            cache: false,
             deps: [ 'stream', 'synth-recheck-tracks' ],
             fn: function () {
                 var videoTracks = this.stream.getVideoTracks().filter(function (track) {
@@ -131,7 +129,6 @@ module.exports = State.extend({
             }
         },
         cameraName: {
-            cache: false,
             deps: [ 'stream', 'hasVideo', 'synth-recheck-tracks' ],
             fn: function () {
                 if (!this.hasVideo || !this.isLocal) {
@@ -143,7 +140,6 @@ module.exports = State.extend({
             }
         },
         microphoneName: {
-            cache: false,
             deps: [ 'stream', 'hasAudio', 'synth-recheck-tracks' ],
             fn: function () {
                 if (!this.hasAudio || !this.isLocal) {
