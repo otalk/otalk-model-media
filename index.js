@@ -86,9 +86,9 @@ module.exports = State.extend({
                 }
 
                 if (this.isLocal) {
-                    return this._hardAudioMute;
+                    return this._hardVideoMute;
                 } else {
-                    return this._remoteAudioMute;
+                    return this._remoteVideoMute;
                 }
             }
         },
