@@ -287,13 +287,28 @@ module.exports = State.extend({
         }
 
         var foundTrack = null;
-        this.stream.getTracks().forEach(function (track) {
+        this.getTracks().forEach(function (track) {
             if (track.id === trackId) {
                 foundTrack = track;
             }
         });
 
         return foundTrack;
+    },
+
+    getTracks: function () {
+        if (this.stream.getTracks) {
+            return this.stream.getTracks();
+        }
+
+        var results = [];
+        this.stream.getAudioTracks().forEach(function (track) {
+            results.push(track);
+        });
+        this.stream.getVideoTracks().forEach(function (track) {
+            results.push(track);
+        });
+        return results;
     },
 
     createStreamForSelectedVideoTrack: function () {
@@ -320,7 +335,11 @@ module.exports = State.extend({
     stop: function () {
         this.stopVolumeMonitor();
 
-        this.stream.getTracks().forEach(function (track) {
+        if (this.stream.stop) {
+            this.stream.stop();
+        }
+
+        this.getTracks().forEach(function (track) {
             if (track.readyState !== 'ended') {
                 track.stop();
             }
@@ -342,7 +361,7 @@ module.exports = State.extend({
             self.isEnded = true;
         });
 
-        this.stream.getTracks().forEach(function (track) {
+        this.getTracks().forEach(function (track) {
             self._registerTrackEvents(track);
         });
 
