@@ -65,9 +65,9 @@ module.exports = State.extend({
             }
         },
         audioMuted: {
-            deps: [ 'isLocal', '_audioMute', '_remoteAudioMute', '_hardAudioMute' ],
+            deps: [ 'hasAudio', 'isLocal', '_audioMute', '_remoteAudioMute', '_hardAudioMute' ],
             fn: function () {
-                if (this._audioMute) {
+                if (this._audioMute || !this.hasAudio) {
                     return true;
                 }
 
@@ -79,9 +79,9 @@ module.exports = State.extend({
             }
         },
         videoMuted: {
-            deps: [ 'isLocal', '_videoMute', '_remoteVideoMute', '_hardVideoMute' ],
+            deps: [ 'hasVideo', 'isLocal', '_videoMute', '_remoteVideoMute', '_hardVideoMute' ],
             fn: function () {
-                if (this._videoMute) {
+                if (this._videoMute || !this.hasVideo) {
                     return true;
                 }
 
@@ -93,15 +93,15 @@ module.exports = State.extend({
             }
         },
         remoteAudioMuted: {
-            deps: [ '_remoteAudioMute' ],
+            deps: [ 'hasAudio', '_remoteAudioMute' ],
             fn: function () {
-                return this._remoteAudioMute;
+                return this._remoteAudioMute || !this.hasAudio;
             }
         },
         remoteVideoMuted: {
-            deps: [ '_remoteVideoMute' ],
+            deps: [ 'hasVideo', '_remoteVideoMute' ],
             fn: function () {
-                return this._remoteVideoMute;
+                return this._remoteVideoMute || !this.hasVideo;
             }
         },
         hasAudio: {
