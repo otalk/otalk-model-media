@@ -1,7 +1,7 @@
 {
   "name": "otalk-model-media",
   "description": "An Ampersand-State representation for a WebRTC media stream",
-  "version": "4.0.6",
+  "version": "4.1.0",
   "author": "Lance Stout <lance@andyet.net>",
   "bugs": "https://github.com/otalk/otalk-model-media/issues",
   "dependencies": {
