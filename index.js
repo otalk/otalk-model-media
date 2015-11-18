@@ -335,10 +335,6 @@ module.exports = State.extend({
     stop: function () {
         this.stopVolumeMonitor();
 
-        if (this.stream.stop) {
-            this.stream.stop();
-        }
-
         this.getTracks().forEach(function (track) {
             if (track.readyState !== 'ended') {
                 track.stop();
